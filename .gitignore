@@ -1,12 +1,39 @@
 .DS_Store
+
+# Swift Package Manager
 /.build
 /Packages
-/dist
-xcuserdata/
-DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+
+# Xcode
+xcuserdata/
+DerivedData/
+*.hmap
+
+# App packaging
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Dependency managers
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Local environment
 .netrc
+/dist
+
+# Generated icon assets
 Assets/AppIcon.icns
 Assets/AppIcon-1024.png
 Assets/AppIcon.iconset/

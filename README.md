@@ -185,7 +185,7 @@ Issue / PR 模板已包含在仓库中：
 
 当前默认采用：
 
-- [MIT License](LICENSE)
+- [Apache License 2.0](LICENSE)
 
 ## GitHub 文案
 
