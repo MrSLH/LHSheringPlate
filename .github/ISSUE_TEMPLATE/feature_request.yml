@@ -1,0 +1,67 @@
+name: Feature request
+description: Suggest an improvement for ShearingPlate
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests are most useful when they are tied to a concrete workflow.
+
+        This project is still in MVP stage, so requests that are small, focused, and compatible with the current local-first design are easier to evaluate.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      placeholder: Describe the workflow gap or pain point
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      placeholder: Describe the feature you want
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Example workflow
+      placeholder: Explain how you would use this feature day to day
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      placeholder: Other tools, workarounds, or rejected approaches
+
+  - type: dropdown
+    id: impact_area
+    attributes:
+      label: Which area does this affect most?
+      options:
+        - Clipboard capture
+        - Search and history
+        - Menu bar panel
+        - Global shortcut
+        - Launch at login
+        - Packaging and distribution
+        - Storage and persistence
+        - Privacy and permissions
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues first
+          required: true
+        - label: This request is specific enough to evaluate
+          required: true
