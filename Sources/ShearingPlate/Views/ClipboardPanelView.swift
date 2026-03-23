@@ -31,7 +31,7 @@ struct ClipboardPanelView: View {
                     .labelsHidden()
             }
 
-            TextField("搜索历史内容或来源应用", text: $appState.searchText)
+            TextField("搜索历史内容、文件名或来源应用", text: $appState.searchText)
                 .textFieldStyle(.roundedBorder)
 
             if let errorMessage = appState.lastErrorMessage {
@@ -44,7 +44,7 @@ struct ClipboardPanelView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("还没有可展示的历史记录")
                         .font(.headline)
-                    Text("复制一段文本或链接后，它会自动出现在这里。当前 MVP 只记录纯文本和 URL。")
+                    Text("复制文本、链接、富文本、图片或文件后，它会自动出现在这里。")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

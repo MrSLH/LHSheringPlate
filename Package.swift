@@ -22,6 +22,7 @@ let package = Package(
                 .linkedFramework("Carbon"),
                 .linkedFramework("ServiceManagement"),
                 .linkedFramework("SwiftUI"),
+                .linkedLibrary("sqlite3"),
             ]
         ),
         .testTarget(

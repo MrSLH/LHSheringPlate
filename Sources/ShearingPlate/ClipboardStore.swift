@@ -70,7 +70,7 @@ final class FileClipboardStore: ClipboardStore {
         try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
     }
 
-    private static func defaultDirectoryURL(fileManager: FileManager) -> URL {
+    static func defaultDirectoryURL(fileManager: FileManager) -> URL {
         let baseURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.homeDirectoryForCurrentUser
                 .appendingPathComponent("Library")

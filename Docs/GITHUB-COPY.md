@@ -15,7 +15,7 @@
 
 ### 中文长版
 
-ShearingPlate 是一个使用 Swift 构建的 macOS 菜单栏剪贴板历史工具，支持登录启动、全局快捷键、自定义录制、搜索和本地持久化，当前聚焦自用与小范围测试分发场景。
+ShearingPlate 是一个使用 Swift 构建的 macOS 菜单栏剪贴板历史工具，支持文本、图片、富文本 / HTML、文件历史记录，支持登录启动、全局快捷键、自定义录制与本地 SQLite 持久化，当前聚焦自用与小范围测试分发场景。
 
 ### English Short
 
@@ -51,13 +51,13 @@ ShearingPlate 是一个面向 macOS 的剪贴板历史工具原型。它优先�
 这是第一个可运行的 MVP 版本，当前支持：
 
 - 菜单栏常驻
-- 自动记录纯文本和 URL
-- 最近 20 次复制动作历史
+- 自动记录纯文本、URL、图片、富文本 / HTML、文件
+- 最近 20 条唯一历史记录，相同内容自动合并
 - 搜索、置顶、删除、暂停记录
 - 登录启动
 - 全局快捷键打开面板
 - 自定义快捷键录制
-- 本地 JSON 持久化
+- 本地 SQLite 持久化
 
 注意事项：
 
@@ -73,13 +73,13 @@ ShearingPlate 是一个面向 macOS 的剪贴板历史工具原型。它优先�
 This is the first runnable MVP release with:
 
 - macOS menu bar app experience
-- clipboard history for plain text and URLs
-- recent 20 copy events
+- clipboard history for plain text, URLs, images, rich text / HTML, and files
+- recent 20 unique clipboard items with duplicate merge
 - search, pin, delete, pause recording
 - launch at login
 - global shortcut to open the panel
 - customizable shortcut recorder
-- local JSON persistence
+- local SQLite persistence
 
 Notes:
 
@@ -93,7 +93,7 @@ Notes:
 ### 中文版
 
 我做了一个 macOS 剪贴板历史工具的早期测试版，想请你帮我试用一下。  
-这是一个菜单栏应用，当前支持记录最近 20 次复制动作、快捷搜索、登录启动和自定义快捷键。  
+这是一个菜单栏应用，当前支持记录文本、图片、富文本 / HTML、文件历史，支持快捷搜索、登录启动和自定义快捷键。  
 这版还是内测包，不是公证版本，所以第一次打开时系统可能会拦一下。压缩包里我已经放了安装说明。
 
 ### 简短版

@@ -11,7 +11,7 @@ final class AppState: ObservableObject {
     @Published var launchAtLoginStatus: LaunchAtLoginStatusSnapshot?
     @Published var globalShortcutStatusMessage: String?
 
-    var clipboardWriter: ((String) -> Void)?
+    var clipboardWriter: ((ClipboardItem) -> Void)?
     var launchAtLoginUpdater: ((Bool) throws -> LaunchAtLoginStatusSnapshot)?
     var launchAtLoginStatusProvider: (() -> LaunchAtLoginStatusSnapshot)?
     var hotKeyUpdater: ((Bool, HotKeyShortcut) throws -> HotKeyRegistrationResult)?
@@ -22,7 +22,7 @@ final class AppState: ObservableObject {
         self.store = store
 
         do {
-            self.items = try store.loadItems()
+            self.items = Self.mergeDuplicateItems(try store.loadItems())
         } catch {
             self.items = []
             self.lastErrorMessage = "历史记录读取失败：\(error.localizedDescription)"
@@ -55,13 +55,16 @@ final class AppState: ObservableObject {
         return ordered.filter { $0.matches(query: normalizedQuery) }
     }
 
-    func capture(content: String, sourceApp: NSRunningApplication?) {
+    func capture(payload: ClipboardPayload, sourceApp: NSRunningApplication?) {
         guard !settings.isPaused else {
             return
         }
 
-        let normalizedContent = content.normalizedClipboardText
-        guard !normalizedContent.isEmpty else {
+        if payload.kind != .image
+            && payload.kind != .files
+            && payload.kind != .html
+            && payload.kind != .richText
+            && payload.searchableText.isEmpty {
             return
         }
 
@@ -70,22 +73,37 @@ final class AppState: ObservableObject {
             return
         }
 
-        items.insert(
-            ClipboardItem.make(
-                content: normalizedContent,
+        let now = Date()
+        let newItem = ClipboardItem.make(
+            payload: payload,
+            sourceAppName: sourceApp?.localizedName,
+            sourceBundleID: sourceBundleID,
+            capturedAt: now
+        )
+
+        if let existingIndex = items.firstIndex(where: { $0.contentHash == newItem.contentHash }) {
+            let mergedItem = items[existingIndex].mergedCapture(
+                payload: payload,
                 sourceAppName: sourceApp?.localizedName,
                 sourceBundleID: sourceBundleID,
-                capturedAt: Date()
-            ),
-            at: 0
-        )
+                capturedAt: now
+            )
+            items.remove(at: existingIndex)
+            items.insert(mergedItem, at: 0)
+        } else {
+            items.insert(newItem, at: 0)
+        }
 
         trimItems()
         persistItems()
     }
 
+    func capture(content: String, sourceApp: NSRunningApplication?) {
+        capture(payload: .text(content.normalizedClipboardText), sourceApp: sourceApp)
+    }
+
     func copy(_ item: ClipboardItem) {
-        clipboardWriter?(item.content)
+        clipboardWriter?(item)
 
         guard let index = items.firstIndex(where: { $0.id == item.id }) else {
             return
@@ -232,6 +250,8 @@ final class AppState: ObservableObject {
     }
 
     private func trimItems() {
+        items = Self.mergeDuplicateItems(items)
+
         let pinnedItems = items.filter(\.isPinned)
         let unpinnedItems = items
             .filter { !$0.isPinned }
@@ -261,6 +281,36 @@ final class AppState: ObservableObject {
             }
         } catch {
             lastErrorMessage = "设置保存失败：\(error.localizedDescription)"
+        }
+    }
+
+    private static func mergeDuplicateItems(_ items: [ClipboardItem]) -> [ClipboardItem] {
+        var mergedByHash: [String: ClipboardItem] = [:]
+
+        for item in items.sorted(by: { $0.capturedAt > $1.capturedAt }) {
+            if let existing = mergedByHash[item.contentHash] {
+                let latestLastUsedAt = max(existing.lastUsedAt ?? .distantPast, item.lastUsedAt ?? .distantPast)
+                mergedByHash[item.contentHash] = ClipboardItem(
+                    id: existing.id,
+                    payload: existing.capturedAt >= item.capturedAt ? existing.payload : item.payload,
+                    sourceAppName: existing.sourceAppName ?? item.sourceAppName,
+                    sourceBundleID: existing.sourceBundleID ?? item.sourceBundleID,
+                    capturedAt: max(existing.capturedAt, item.capturedAt),
+                    lastUsedAt: latestLastUsedAt == .distantPast ? nil : latestLastUsedAt,
+                    isPinned: existing.isPinned || item.isPinned,
+                    captureCount: existing.captureCount + item.captureCount
+                )
+            } else {
+                mergedByHash[item.contentHash] = item
+            }
+        }
+
+        return mergedByHash.values.sorted { lhs, rhs in
+            if lhs.isPinned != rhs.isPinned {
+                return lhs.isPinned && !rhs.isPinned
+            }
+
+            return lhs.capturedAt > rhs.capturedAt
         }
     }
 }

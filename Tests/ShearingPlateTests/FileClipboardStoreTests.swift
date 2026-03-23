@@ -3,6 +3,10 @@ import XCTest
 @testable import ShearingPlate
 
 final class FileClipboardStoreTests: XCTestCase {
+    private func makeTemporaryDirectory() -> URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    }
+
     func testLegacySettingsDecodeFallsBackToDefaults() throws {
         let json = """
         {
@@ -26,8 +30,8 @@ final class FileClipboardStoreTests: XCTestCase {
         XCTAssertEqual(settings.pollInterval, 0.8, accuracy: 0.001)
     }
 
-    func testStorePersistsItemsAndSettings() throws {
-        let baseDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    func testLegacyFileStorePersistsItemsAndSettings() throws {
+        let baseDirectory = makeTemporaryDirectory()
         defer {
             try? FileManager.default.removeItem(at: baseDirectory)
         }
@@ -61,9 +65,113 @@ final class FileClipboardStoreTests: XCTestCase {
         XCTAssertEqual(try store.loadSettings(), settings)
     }
 
+    func testSQLiteStorePersistsRichPayloadsAndSettings() throws {
+        let baseDirectory = makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: baseDirectory)
+        }
+
+        let store = SQLiteClipboardStore(baseDirectory: baseDirectory)
+        let items = [
+            ClipboardItem.make(
+                payload: .richText(
+                    plainText: "Bold text",
+                    html: "<p><strong>Bold text</strong></p>",
+                    rtfData: Data("{\\rtf1\\ansi Bold text}".utf8)
+                ),
+                sourceAppName: "Pages",
+                sourceBundleID: "com.apple.iWork.Pages",
+                capturedAt: Date(timeIntervalSince1970: 1)
+            ),
+            ClipboardItem.make(
+                payload: .files([
+                    ClipboardFileReference(path: "/tmp/a.txt"),
+                    ClipboardFileReference(path: "/tmp/b.txt"),
+                ]),
+                sourceAppName: "Finder",
+                sourceBundleID: "com.apple.finder",
+                capturedAt: Date(timeIntervalSince1970: 2)
+            ),
+            ClipboardItem.make(
+                payload: .image(data: Data([0x01, 0x02, 0x03]), width: 12, height: 34),
+                sourceAppName: "Preview",
+                sourceBundleID: "com.apple.Preview",
+                capturedAt: Date(timeIntervalSince1970: 3)
+            ),
+        ]
+
+        var settings = AppSettings()
+        settings.maxItems = 250
+        settings.pollInterval = 1.2
+
+        try store.saveItems(items)
+        try store.saveSettings(settings)
+
+        let expectedOrder = items.sorted { $0.capturedAt > $1.capturedAt }
+        XCTAssertEqual(try store.loadItems(), expectedOrder)
+        XCTAssertEqual(try store.loadSettings(), settings)
+    }
+
+    func testSQLiteStoreMigratesLegacyJSONFilesOnFirstLoad() throws {
+        let baseDirectory = makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: baseDirectory)
+        }
+
+        let legacyStore = FileClipboardStore(baseDirectory: baseDirectory)
+        let legacyItems = [
+            ClipboardItem.make(
+                content: "https://example.com",
+                sourceAppName: "Safari",
+                sourceBundleID: "com.apple.Safari"
+            ),
+            ClipboardItem.make(
+                content: "https://example.com",
+                sourceAppName: "Safari",
+                sourceBundleID: "com.apple.Safari"
+            ),
+        ]
+        var legacySettings = AppSettings()
+        legacySettings.maxItems = 400
+
+        try legacyStore.saveItems(legacyItems)
+        try legacyStore.saveSettings(legacySettings)
+
+        let sqliteStore = SQLiteClipboardStore(baseDirectory: baseDirectory)
+        let migratedItems = try sqliteStore.loadItems()
+
+        XCTAssertEqual(migratedItems.count, 1)
+        XCTAssertEqual(migratedItems.first?.content, "https://example.com")
+        XCTAssertEqual(migratedItems.first?.captureCount, 2)
+        XCTAssertEqual(try sqliteStore.loadSettings(), legacySettings)
+    }
+
+    func testSQLiteStoreDoesNotReimportLegacyJSONAfterDatabaseExists() throws {
+        let baseDirectory = makeTemporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: baseDirectory)
+        }
+
+        let legacyStore = FileClipboardStore(baseDirectory: baseDirectory)
+        try legacyStore.saveItems([
+            ClipboardItem.make(
+                content: "legacy",
+                sourceAppName: "Notes",
+                sourceBundleID: "com.apple.Notes"
+            ),
+        ])
+
+        let firstStore = SQLiteClipboardStore(baseDirectory: baseDirectory)
+        XCTAssertEqual(try firstStore.loadItems().count, 1)
+        try firstStore.saveItems([])
+
+        let secondStore = SQLiteClipboardStore(baseDirectory: baseDirectory)
+        XCTAssertTrue(try secondStore.loadItems().isEmpty)
+    }
+
     @MainActor
-    func testAppStateKeepsRecentCaptureEvents() {
-        let baseDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    func testAppStateMergesDuplicateCaptures() {
+        let baseDirectory = makeTemporaryDirectory()
         defer {
             try? FileManager.default.removeItem(at: baseDirectory)
         }
@@ -74,13 +182,14 @@ final class FileClipboardStoreTests: XCTestCase {
         appState.capture(content: "hello world", sourceApp: nil)
         appState.capture(content: "hello world", sourceApp: nil)
 
-        XCTAssertEqual(appState.items.count, 2)
+        XCTAssertEqual(appState.items.count, 1)
         XCTAssertEqual(appState.items.first?.content, "hello world")
+        XCTAssertEqual(appState.items.first?.captureCount, 2)
     }
 
     @MainActor
     func testAppStateTrimsToDefaultTwentyItems() {
-        let baseDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let baseDirectory = makeTemporaryDirectory()
         defer {
             try? FileManager.default.removeItem(at: baseDirectory)
         }

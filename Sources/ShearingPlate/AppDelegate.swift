@@ -4,7 +4,7 @@ import Foundation
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let store = FileClipboardStore()
+    private let store = SQLiteClipboardStore()
     private lazy var appState = AppState(store: store)
     private let clipboardMonitor = ClipboardMonitor()
     private let launchAtLoginController = LaunchAtLoginController()
@@ -15,8 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        appState.clipboardWriter = { [weak self] content in
-            self?.clipboardMonitor.writeToPasteboard(content)
+        appState.clipboardWriter = { [weak self] item in
+            self?.clipboardMonitor.writeToPasteboard(item)
         }
         appState.launchAtLoginUpdater = { [weak self] isEnabled in
             guard let self else {
@@ -36,8 +36,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return try self.hotKeyController.updateRegistration(isEnabled: isEnabled, shortcut: shortcut)
         }
 
-        clipboardMonitor.onCapture = { [weak self] content, sourceApp in
-            self?.appState.capture(content: content, sourceApp: sourceApp)
+        clipboardMonitor.onCapture = { [weak self] payload, sourceApp in
+            self?.appState.capture(payload: payload, sourceApp: sourceApp)
         }
         hotKeyController.onHotKey = { [weak self] in
             self?.statusBarController?.togglePanel()

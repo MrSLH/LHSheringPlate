@@ -52,7 +52,7 @@ softwareupdate --install-rosetta --agree-to-license
 
 - 应用启动后会出现在 macOS 菜单栏
 - 点击菜单栏图标可打开历史面板
-- 默认会记录最近 20 次复制动作
+- 默认会记录最近 20 条唯一历史，支持文本、图片、富文本 / HTML、文件
 - 可以在设置中开启登录启动
 - 可以在设置中录制自定义快捷键
 - 面板底部有“退出”按钮
@@ -64,6 +64,10 @@ softwareupdate --install-rosetta --agree-to-license
 ```text
 ~/Library/Application Support/ShearingPlate/
 ```
+
+当前主数据文件为：
+
+- `clipboard.sqlite3`
 
 ## 测试版说明
 

@@ -15,8 +15,8 @@ ShearingPlate 采用菜单栏常驻形态，默认本地存储，不依赖云端
 ## 已有能力
 
 - 菜单栏常驻
-- 自动记录纯文本和 URL
-- 默认保留最近 20 次复制动作
+- 自动记录纯文本、URL、图片、富文本 / HTML、文件
+- 相同内容自动合并，默认保留最近 20 条唯一历史
 - 搜索历史记录
 - 置顶、删除、清空未置顶
 - 暂停记录
@@ -25,14 +25,13 @@ ShearingPlate 采用菜单栏常驻形态，默认本地存储，不依赖云端
 - 全局快捷键打开面板
 - 设置页录制自定义快捷键
 - 来源应用黑名单
-- 本地 JSON 持久化
+- 本地 SQLite 持久化
+- 兼容旧版 JSON 数据自动迁移
 - 一键打包 `.app`
 - 一键生成测试分发 `zip`
 
 ## 当前限制
 
-- 当前只记录纯文本和 URL
-- 还不支持图片、文件、富文本完整回放
 - 当前构建产物是 `x86_64`，Apple Silicon Mac 可能需要 Rosetta 2
 - 当前是 ad-hoc 签名，不是公证版本
 - 不适合公开大规模分发
@@ -52,7 +51,7 @@ ShearingPlate 采用菜单栏常驻形态，默认本地存储，不依赖云端
 - `NSPasteboard` 轮询监听
 - `Carbon RegisterEventHotKey` 全局快捷键
 - `ServiceManagement.SMAppService` 登录启动
-- 本地 `JSON` 持久化
+- 本地 `SQLite` 持久化
 - `Swift Package Manager`
 
 ## 快速开始
@@ -127,8 +126,8 @@ open dist/ShearingPlate.app
 
 当前包含：
 
-- `clip-items.json`
-- `settings.json`
+- `clipboard.sqlite3`
+- 旧版 `clip-items.json` / `settings.json` 会在首次启动时自动迁移
 
 默认会忽略一批敏感应用，例如：
 
@@ -155,10 +154,6 @@ Assets/                     图标资源
 
 ## 路线图
 
-- 图片剪贴板支持
-- 富文本与 HTML 支持
-- 文件剪贴板支持
-- SQLite 存储
 - 更完整的搜索与过滤
 - Universal build
 - Developer ID 签名与公证
